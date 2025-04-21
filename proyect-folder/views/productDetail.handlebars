@@ -15,13 +15,12 @@
         <p><strong>Categoría:</strong> {{product.category}}</p>
         <p><strong>Disponibilidad:</strong> {{product.availability}}</p>
         
-        <!-- Botón para agregar al carrito -->
+        <!-- Formulario para agregar al carrito -->
         <form action="/api/carts/{{cartId}}/product/{{product.id}}" method="POST">
             <button type="submit">Agregar al carrito</button>
         </form>
     </div>
 
-    <!-- Enlace para volver a la lista de productos -->
     <a href="/products">Volver a la lista de productos</a>
 </body>
 </html>

@@ -45,7 +45,8 @@ class ProductManager {
   async getById(id) {
     const products = await this.getAll();
     return products.find((p) => p.id === id);
-  }
+}
+
 
   async add(product) {
     const products = await this.getAll();
@@ -83,6 +84,31 @@ class ProductManager {
     await fs.promises.writeFile(path, JSON.stringify(filteredProducts, null, 2));
     return true;
   }
+
+  // Agrega este método a tu ProductManager.js
+
+async getCount(query = {}) {
+  const data = await fs.promises.readFile(path, 'utf-8');
+  let products = JSON.parse(data);
+
+  // Filtrado por query (por ejemplo, por categoría o disponibilidad)
+  if (query.$or && query.$or.length > 0) {
+    products = products.filter(product =>
+      query.$or.some(condition =>
+        Object.keys(condition).some(key =>
+          product[key] && product[key].toLowerCase().includes(condition[key].toLowerCase())
+        )
+      )
+    );
+  }
+
+  // Devuelve el conteo de productos que cumplen con los criterios
+  return products.length;
 }
+
+
+}
+
+
 
 module.exports = ProductManager;

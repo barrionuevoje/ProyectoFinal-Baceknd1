@@ -8,9 +8,9 @@
 <body>
   <h1>Carrito de Compras</h1>
 
-  {{#if cart.products.length}}
+  {{#if cart.products.length}} <!-- Verificar si hay productos en el carrito -->
     <ul>
-      {{#each cart.products}}
+      {{#each cart.products}} <!-- Iterar sobre los productos en el carrito -->
         <li>
           <h3>{{this.product.name}}</h3>
           <p>Descripción: {{this.product.description}}</p>

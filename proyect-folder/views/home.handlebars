@@ -8,8 +8,8 @@
 <body>
     <h1>Lista de Productos</h1>
     <ul>
-        {{#each products}}
-            <li>{{this.title}} - ${{this.price}}</li>
+        {{#each products}} <!-- Iterar sobre los productos -->
+            <li>{{this.name}} - ${{this.price}}</li> <!-- Mostrar el nombre y precio del producto -->
         {{/each}}
     </ul>
 </body>

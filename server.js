@@ -1,63 +1,66 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
-const { engine } = require('express-handlebars'); // <- Correcto, Handlebars es la plantilla
-
-const productsRouter = require('./proyect-folder/routes/products');
-const cartsRouter = require('./proyect-folder/routes/carts');
-const viewsRouter = require('./proyect-folder/routes/views');
+const { engine } = require('express-handlebars');
 const methodOverride = require('method-override');
 
+// Rutas
+const productsRouter = require('./proyect-folder/routes/products.router'); 
+const cartsRouter = require('./proyect-folder/routes/carts.router');
+const viewsRouter = require('./proyect-folder/routes/views.router');
 
-const ProductManager = require('./ProductManager');
-const CartManager = require('./CartsManager'); // Correcto, importamos CartManager
+// Modelo de Producto de MongoDB
+const Product = require('./proyect-folder/models/Product'); 
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 const PORT = 8080;
 
-// Instancia de los manejadores
-const productManager = new ProductManager();
-const cartManager = new CartManager(); // Instancia de CartManager
+// Conexión a MongoDB
+mongoose.connect('mongodb://localhost:27017/ecommerce', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => console.log('✅ Conectado a MongoDB'))
+  .catch(err => console.error('❌ Error al conectar a MongoDB:', err));
 
-// Configurar Handlebars correctamente
-app.engine('handlebars', engine()); // Configuración de Handlebars
+// Configurar Handlebars
+app.engine('handlebars', engine());
 app.set('view engine', 'handlebars');
-app.set('views', './proyect-folder/views'); // Carpeta de vistas
+app.set('views', './proyect-folder/views');
+
+// Middlewares
 app.use(methodOverride('_method'));
-
-
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public')); // Servir archivos estáticos
+app.use(express.static('public'));
 
-// Configuración de las rutas
+// Rutas
 app.use('/api/products', productsRouter);
 app.use('/api/carts', cartsRouter);
 app.use('/', viewsRouter);
 
 // WebSocket connection
-io.on('connection', (socket) => {
-    console.log('Nuevo cliente conectado');
+io.on('connection', async (socket) => {
+  console.log('🟢 Cliente conectado via WebSocket');
+  const products = await Product.find(); // Obtener productos de MongoDB
+  socket.emit('updateProducts', products); // Enviar productos al cliente
 
-    // Escuchar evento de nuevo producto
-    socket.on('newProduct', async (product) => {
-        await productManager.add(product);
-        const products = await productManager.getAll();
-        io.emit('updateProducts', products); // Enviar actualización a todos los clientes
-    });
+  socket.on('newProduct', async (data) => {
+    await Product.create(data); // Crear nuevo producto
+    const updatedProducts = await Product.find(); // Obtener productos actualizados
+    io.emit('updateProducts', updatedProducts); // Emitir lista actualizada
+  });
 
-    // Escuchar evento de eliminar producto
-    socket.on('deleteProduct', async (id) => {
-        await productManager.delete(id);
-        const products = await productManager.getAll();
-        io.emit('updateProducts', products); // Enviar actualización a todos los clientes
-    });
+  socket.on('deleteProduct', async (id) => {
+    await Product.findByIdAndDelete(id); // Eliminar producto
+    const updatedProducts = await Product.find(); // Obtener productos actualizados
+    io.emit('updateProducts', updatedProducts); // Emitir lista actualizada
+  });
 });
 
 // Iniciar servidor
 httpServer.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
